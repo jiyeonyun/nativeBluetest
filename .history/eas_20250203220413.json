@@ -8,11 +8,6 @@
       "developmentClient": true,
       "distribution": "internal"
     },
-    "ios": {
-      "distribution": "internal",
-      "credentialsSource": "local",
-      "artifactPath": "ios/build/Build/Products/Release-iphoneos/*.ipa"
-    },
     "preview": {
       "distribution": "internal"
     },

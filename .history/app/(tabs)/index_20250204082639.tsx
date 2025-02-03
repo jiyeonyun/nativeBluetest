@@ -4,7 +4,9 @@ import { BleManager, Device } from "react-native-ble-plx";
 import { PermissionsAndroid, Platform } from "react-native";
 
 export default function HomeScreen() {
-    const bleManager = new BleManager();
+    const bleManager = new BleManager({
+        restoreStateIdentifier: "myApp.BluetoothRestore", // 복원 기능을 위한 키 추가
+    });
     const [devices, setDevices] = useState<Device[]>([]);
     const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
 
