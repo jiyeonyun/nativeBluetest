@@ -8,6 +8,7 @@ export default function HomeScreen() {
     const [devices, setDevices] = useState<Device[]>([]);
     const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
     const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
+    const [services, setServices] = useState<any[]>([]); // 서비스 데이터를 저장할 상태 추가
 
     useEffect(() => {
         requestPermissions();
@@ -60,26 +61,19 @@ export default function HomeScreen() {
             await connected.discoverAllServicesAndCharacteristics();
 
             // 장치에서 제공하는 서비스와 특성 출력
-            const services = await connected.services();
-            console.log("Services:", services);
+            const fetchedServices = await connected.services();
+            setServices(fetchedServices); // 서비스 데이터를 상태에 저장
 
             // 배터리 서비스 찾기
-            const batteryService = services.find((service) => service.uuid === "0000180F-0000-1000-8000-00805f9b34fb");
+            const batteryService = fetchedServices.find(
+                (service) => service.uuid === "0000180F-0000-1000-8000-00805f9b34fb"
+            );
             if (!batteryService) {
                 console.error("Battery service not found.");
             } else {
                 const characteristics = await batteryService.characteristics();
                 console.log("Battery Service Characteristics:", characteristics);
             }
-
-            // 장치의 다른 서비스와 특성들 출력
-            services.forEach((service) => {
-                const characteristics = service.characteristics();
-                characteristics.then((chars) => {
-                    console.log(`Service UUID: ${service.uuid}`);
-                    console.log("Characteristics:", chars);
-                });
-            });
         } catch (error) {
             console.error("Connection Error:", error);
         }
@@ -102,6 +96,34 @@ export default function HomeScreen() {
                     <Text style={{ marginTop: 10, fontSize: 16 }}>배터리 잔량: {batteryLevel}%</Text>
                 )}
 
+                {/* 서비스 리스트를 FlatList로 표시 */}
+                <Text style={{ marginTop: 20, fontSize: 18, fontWeight: "bold" }}>서비스 목록</Text>
+                <FlatList
+                    data={services}
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={({ item }) => (
+                        <View style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: "#ccc" }}>
+                            <Text>서비스 UUID: {item.uuid}</Text>
+                            {/* 각 서비스의 특성 출력 */}
+                            {item.characteristics && item.characteristics.length > 0 && (
+                                <View style={{ marginTop: 10 }}>
+                                    <Text>특성:</Text>
+                                    <FlatList
+                                        data={item.characteristics}
+                                        keyExtractor={(char) => char.id.toString()}
+                                        renderItem={({ item: char }) => (
+                                            <Text>
+                                                - 특성 UUID: {char.uuid} {char.isReadable ? "(읽기 가능)" : ""}
+                                            </Text>
+                                        )}
+                                    />
+                                </View>
+                            )}
+                        </View>
+                    )}
+                />
+
+                {/* 장치 목록 */}
                 <FlatList
                     data={devices}
                     keyExtractor={(item) => item.id}
