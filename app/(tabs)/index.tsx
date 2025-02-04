@@ -60,17 +60,21 @@ export default function HomeScreen() {
             // 모든 서비스 및 특성 찾기
             await connected.discoverAllServicesAndCharacteristics();
 
-            // 배터리 서비스와 배터리 특성 찾기
-            const batteryService = await connected.readCharacteristicForService(
-                "0000180F-0000-1000-8000-00805f9b34fb" // 배터리 서비스 UUID
+            // 배터리 서비스에서 배터리 특성 읽기
+            const batteryCharacteristic = await connected.readCharacteristicForService(
+                "0000180F-0000-1000-8000-00805f9b34fb", // 배터리 서비스 UUID
+                "00002a19-0000-1000-8000-00805f9b34fb" // 배터리 특성 UUID
             );
 
-            const batteryLevelData = await batteryService.read(); // 배터리 특성 값 읽기
-
             // 배터리 값은 바이트로 반환되므로, 바이트를 읽어서 값을 추출
-            const batteryLevel = batteryLevelData.value[0]; // 첫 번째 바이트가 배터리 수준
-            setBatteryLevel(batteryLevel);
-            console.log("Battery level:", batteryLevel);
+            if (batteryCharacteristic.value) {
+                // 배터리 값은 바이트로 반환되므로, 바이트를 읽어서 값을 추출
+                const batteryLevel = parseInt(batteryCharacteristic.value, 16); // 16진수에서 숫자로 변환
+                setBatteryLevel(batteryLevel);
+                console.log("Battery level:", batteryLevel);
+            } else {
+                console.error("Battery level is null or undefined");
+            }
         } catch (error) {
             console.error("Connection Error:", error);
         }
