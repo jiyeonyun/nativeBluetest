@@ -52,21 +52,25 @@ export default function HomeScreen() {
     // 블루투스 장치 연결 및 배터리 레벨 가져오기
     const connectToDevice = async (device: Device) => {
         try {
+            // BLE 장치에 연결
             const connected = await bleManager.connectToDevice(device.id);
             setConnectedDevice(connected);
             console.log("Connected to:", connected.name);
 
-            // 배터리 서비스에 연결하여 배터리 수준 가져오기
-            const batteryService = await connected.discoverAllServicesAndCharacteristics();
-            const batteryCharacteristic = await batteryService.readCharacteristicForService(
-                "0000180F-0000-1000-8000-00805f9b34fb", // 배터리 서비스 UUID
-                "00002a19-0000-1000-8000-00805f9b34fb" // 배터리 특성 UUID
+            // 모든 서비스 및 특성 찾기
+            await connected.discoverAllServicesAndCharacteristics();
+
+            // 배터리 서비스와 배터리 특성 찾기
+            const batteryService = await connected.readCharacteristicForService(
+                "0000180F-0000-1000-8000-00805f9b34fb" // 배터리 서비스 UUID
             );
 
-            // 배터리 값은 바이트로 반환되므로 16진수로 변환하여 읽음
-            const batteryData = batteryCharacteristic.value;
-            const batteryLevel = parseInt(batteryData as string, 16);
+            const batteryLevelData = await batteryService.read(); // 배터리 특성 값 읽기
+
+            // 배터리 값은 바이트로 반환되므로, 바이트를 읽어서 값을 추출
+            const batteryLevel = batteryLevelData.value[0]; // 첫 번째 바이트가 배터리 수준
             setBatteryLevel(batteryLevel);
+            console.log("Battery level:", batteryLevel);
         } catch (error) {
             console.error("Connection Error:", error);
         }
