@@ -52,28 +52,46 @@ export default function HomeScreen() {
     // 블루투스 장치 연결 및 배터리 레벨 가져오기
     const connectToDevice = async (device: Device) => {
         try {
-            // BLE 장치에 연결
             const connected = await bleManager.connectToDevice(device.id);
             setConnectedDevice(connected);
             console.log("Connected to:", connected.name);
 
-            // 모든 서비스 및 특성 찾기
+            // 서비스 및 특성 탐색
             await connected.discoverAllServicesAndCharacteristics();
 
-            // 배터리 서비스에서 배터리 특성 읽기
-            const batteryCharacteristic = await connected.readCharacteristicForService(
-                "0000180F-0000-1000-8000-00805f9b34fb", // 배터리 서비스 UUID
-                "00002a19-0000-1000-8000-00805f9b34fb" // 배터리 특성 UUID
-            );
+            // 에어팟에서 제공하는 서비스와 특성 출력
+            const services = await connected.services();
+            console.log("Services:", services);
 
-            // 배터리 값은 바이트로 반환되므로, 바이트를 읽어서 값을 추출
-            if (batteryCharacteristic.value) {
-                // 배터리 값은 바이트로 반환되므로, 바이트를 읽어서 값을 추출
-                const batteryLevel = parseInt(batteryCharacteristic.value, 16); // 16진수에서 숫자로 변환
-                setBatteryLevel(batteryLevel);
+            // 배터리 서비스 찾기
+            const batteryService = services.find((service) => service.uuid === "0000180F-0000-1000-8000-00805f9b34fb");
+            if (!batteryService) {
+                console.error("Battery service not found.");
+                return;
+            }
+
+            // 배터리 서비스의 특성 찾기
+            const characteristics = await batteryService.characteristics();
+            console.log("Characteristics:", characteristics);
+
+            const batteryCharacteristic = characteristics.find(
+                (char) => char.uuid === "00002a19-0000-1000-8000-00805f9b34fb"
+            );
+            if (!batteryCharacteristic) {
+                console.error("Battery characteristic not found.");
+                return;
+            }
+
+            // 배터리 수준 읽기
+            const batteryLevelData = await batteryCharacteristic.read();
+
+            // batteryLevelData.value가 null이 아닌지 체크
+            if (batteryLevelData.value !== null) {
+                const batteryLevel = batteryLevelData.value[0]; // Buffer에서 첫 번째 바이트 값 추출
+                setBatteryLevel(batteryLevel as unknown as number); // 배터리 수준 업데이트
                 console.log("Battery level:", batteryLevel);
             } else {
-                console.error("Battery level is null or undefined");
+                console.error("Failed to read battery level: value is null.");
             }
         } catch (error) {
             console.error("Connection Error:", error);
