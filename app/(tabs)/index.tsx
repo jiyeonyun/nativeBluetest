@@ -59,7 +59,7 @@ export default function HomeScreen() {
             // 서비스 및 특성 탐색
             await connected.discoverAllServicesAndCharacteristics();
 
-            // 에어팟에서 제공하는 서비스와 특성 출력
+            // 장치에서 제공하는 서비스와 특성 출력
             const services = await connected.services();
             console.log("Services:", services);
 
@@ -67,32 +67,19 @@ export default function HomeScreen() {
             const batteryService = services.find((service) => service.uuid === "0000180F-0000-1000-8000-00805f9b34fb");
             if (!batteryService) {
                 console.error("Battery service not found.");
-                return;
-            }
-
-            // 배터리 서비스의 특성 찾기
-            const characteristics = await batteryService.characteristics();
-            console.log("Characteristics:", characteristics);
-
-            const batteryCharacteristic = characteristics.find(
-                (char) => char.uuid === "00002a19-0000-1000-8000-00805f9b34fb"
-            );
-            if (!batteryCharacteristic) {
-                console.error("Battery characteristic not found.");
-                return;
-            }
-
-            // 배터리 수준 읽기
-            const batteryLevelData = await batteryCharacteristic.read();
-
-            // batteryLevelData.value가 null이 아닌지 체크
-            if (batteryLevelData.value !== null) {
-                const batteryLevel = batteryLevelData.value[0]; // Buffer에서 첫 번째 바이트 값 추출
-                setBatteryLevel(batteryLevel as unknown as number); // 배터리 수준 업데이트
-                console.log("Battery level:", batteryLevel);
             } else {
-                console.error("Failed to read battery level: value is null.");
+                const characteristics = await batteryService.characteristics();
+                console.log("Battery Service Characteristics:", characteristics);
             }
+
+            // 장치의 다른 서비스와 특성들 출력
+            services.forEach((service) => {
+                const characteristics = service.characteristics();
+                characteristics.then((chars) => {
+                    console.log(`Service UUID: ${service.uuid}`);
+                    console.log("Characteristics:", chars);
+                });
+            });
         } catch (error) {
             console.error("Connection Error:", error);
         }
