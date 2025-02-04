@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { View, Text, Button, FlatList, TouchableOpacity, SafeAreaView } from "react-native";
 import { BleManager, Device } from "react-native-ble-plx";
 import { PermissionsAndroid, Platform } from "react-native";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "expo-router";
 
 export default function HomeScreen() {
     const bleManager = new BleManager();
@@ -9,7 +11,13 @@ export default function HomeScreen() {
     const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
     const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
     const [services, setServices] = useState<any[]>([]); // 서비스 데이터를 저장할 상태 추가
+    const { logout } = useAuth();
+    const router = useRouter();
 
+    const handleLogout = () => {
+        logout(); // 로그아웃 처리
+        router.replace("/login"); // 로그인 화면으로 이동
+    };
     useEffect(() => {
         requestPermissions();
     }, []);
@@ -82,6 +90,7 @@ export default function HomeScreen() {
     return (
         <SafeAreaView style={{ flex: 1 }}>
             <View style={{ flex: 1, padding: 20 }}>
+                <Button title="로그아웃" onPress={handleLogout} />
                 <Text style={{ fontSize: 20, fontWeight: "bold" }}>블루투스 장치 검색</Text>
 
                 <Button title="스캔 시작" onPress={scanDevices} />
