@@ -16,7 +16,7 @@ export default function HomeScreen() {
 
     const handleLogout = () => {
         logout(); // 로그아웃 처리
-        router.replace("/login"); // 로그인 화면으로 이동
+        router.replace("/(auths)"); // 로그인 화면으로 이동
     };
     useEffect(() => {
         requestPermissions();

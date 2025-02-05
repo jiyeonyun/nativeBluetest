@@ -1,37 +1,30 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
-import { useFonts } from "expo-font";
-import { Stack, Slot, useRouter } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
-import "react-native-reanimated";
-import { useColorScheme } from "@/hooks/useColorScheme";
-
+// app/_layout.tsx
+import React, { useEffect, useState } from "react";
 import { View, ActivityIndicator } from "react-native";
+import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 SplashScreen.preventAutoHideAsync();
 
-function AuthGuard({ children }: { children: React.ReactNode }) {
-    const { isLoggedIn } = useAuth();
-    const router = useRouter();
-    const [isReady, setIsReady] = useState(false);
+export default function RootLayout() {
+    console.log("✅ RootLayout 마운트됨");
 
+    const colorScheme = useColorScheme();
+    const [isAppReady, setIsAppReady] = useState(false);
+
+    // 앱 초기 로딩 후 SplashScreen 숨김
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsReady(true);
-        }, 100); // ✅ RootLayout이 마운트될 시간을 확보
-
-        return () => clearTimeout(timer);
+        const timeout = setTimeout(() => {
+            SplashScreen.hideAsync();
+            setIsAppReady(true);
+        }, 300);
+        return () => clearTimeout(timeout);
     }, []);
 
-    useEffect(() => {
-        if (isReady && !isLoggedIn) {
-            router.replace("/login"); // ✅ RootLayout이 마운트된 후 실행
-        }
-    }, [isReady, isLoggedIn]);
-
-    if (!isLoggedIn) {
+    if (!isAppReady) {
         return (
             <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                 <ActivityIndicator size="large" color="#0000ff" />
@@ -39,37 +32,47 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
         );
     }
 
-    return <>{children}</>;
-}
-
-export default function RootLayout() {
-    const colorScheme = useColorScheme();
-    const [loaded] = useFonts({
-        SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
-    });
-
-    useEffect(() => {
-        if (loaded) {
-            SplashScreen.hideAsync();
-        }
-    }, [loaded]);
-
-    if (!loaded) {
-        return null;
-    }
-
     return (
         <AuthProvider>
             <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-                <AuthGuard>
-                    <Stack>
-                        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                        <Stack.Screen name="login" options={{ headerShown: false }} />
-                        <Stack.Screen name="+not-found" />
-                    </Stack>
-                </AuthGuard>
-                <StatusBar style="auto" />
+                <RootNavigator />
             </ThemeProvider>
         </AuthProvider>
+    );
+}
+
+function RootNavigator() {
+    const { isLoggedIn } = useAuth();
+    const [isAuthChecked, setIsAuthChecked] = useState(false);
+
+    // 인증 상태 체크 (예: 비동기 초기화 등)
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            setIsAuthChecked(true);
+            console.log("✅ 인증 상태 확인 완료, isLoggedIn:", isLoggedIn);
+        }, 500);
+        return () => clearTimeout(timeout);
+    }, []);
+
+    // 인증 체크가 완료되기 전에는 아무것도 렌더링하지 않음
+    if (!isAuthChecked) {
+        return (
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                <ActivityIndicator size="large" color="#0000ff" />
+            </View>
+        );
+    }
+
+    // 인증 상태에 따라 보여줄 화면을 분기
+    return (
+        <Stack screenOptions={{ headerShown: false }}>
+            {isLoggedIn ? (
+                // 로그인 된 상태 → (tabs) 영역 (즉, HomeScreen 등)
+                <Stack.Screen name="(tabs)" />
+            ) : (
+                // 로그인 안 된 상태 → 로그인 화면
+                <Stack.Screen name="(auths)" />
+            )}
+        </Stack>
     );
 }

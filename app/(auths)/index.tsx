@@ -1,6 +1,5 @@
 import { View, Text, TextInput, Button, StyleSheet } from "react-native";
 import { useState, useEffect } from "react";
-
 import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -12,7 +11,7 @@ const LoginScreen = () => {
 
     useEffect(() => {
         if (isLoggedIn) {
-            router.replace("/(tabs)"); // ✅ Root Layout이 마운트된 후 실행
+            router.replace("/(tabs)");
         }
     }, [isLoggedIn]);
 
@@ -40,26 +39,10 @@ const LoginScreen = () => {
     );
 };
 
-export default LoginScreen;
-
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 20,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: "bold",
-        marginBottom: 20,
-    },
-    input: {
-        width: "100%",
-        height: 40,
-        borderColor: "#ccc",
-        borderWidth: 1,
-        marginBottom: 10,
-        paddingHorizontal: 10,
-    },
+    container: { flex: 1, justifyContent: "center", alignItems: "center" },
+    title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
+    input: { width: 200, height: 40, borderWidth: 1, marginBottom: 10, paddingHorizontal: 10 },
 });
+
+export default LoginScreen;
