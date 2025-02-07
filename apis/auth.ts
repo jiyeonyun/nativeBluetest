@@ -1,4 +1,4 @@
-import { Result } from "@/types/responseType";
+import { Auth, LoginFormData, Result, TokenData } from "@/types/responseType";
 import axios from "./config";
 
 // import { getManagerId } from "@common/util";
@@ -10,7 +10,7 @@ export default {
      * @param params
      * @returns
      */
-    async login(params: any): Promise<Result<any>> {
+    async login(params: LoginFormData): Promise<Result<Auth>> {
         try {
             return await axios.host.post(AUTH.SIGNIN, params);
         } catch (e: any) {
@@ -22,7 +22,7 @@ export default {
      * @param params
      * @returns
      */
-    async refreshToken(params: any): Promise<Result<string> | any> {
+    async refreshToken(params: TokenData): Promise<Result<string> | any> {
         try {
             return await axios.host.post(AUTH.REFRESH, params);
         } catch (e: any) {

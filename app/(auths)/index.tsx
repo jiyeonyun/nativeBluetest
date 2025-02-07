@@ -38,7 +38,7 @@ const LoginScreen = () => {
                 await AsyncStorage.setItem("MANAGER_ID", manager.managerId.toString());
 
                 login(); // AuthContext에서 로그인 처리
-                router.replace(menuList[0].menuUrl || "/(tabs)");
+                router.replace("/(tabs)");
             } else {
                 if (response.resultCode === "ERROR_002") {
                     setIsFail(true);
