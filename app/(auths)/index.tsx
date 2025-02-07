@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "@/contexts/AuthContext";
-import apis from "@apis"; // API 요청 모듈
+import apis from "../../apis"; // API 요청 모듈
+import React from "react";
 
 const LoginScreen = () => {
     const { login, isLoggedIn } = useAuth();

@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosHeaders, AxiosResponse, HttpStatusCode } from "axios";
 import { Result } from "@/types/responseType";
 import { HOST_URL } from "./url";
-
+import apis from "./index";
 type ErrorMessages = {
     [key: string]: string; // 모든 키는 string이고, 값도 string입니다.
 };
@@ -36,7 +36,7 @@ const fail = async (error: AxiosError<Result<any>>) => {
             case 403:
                 const accessToken = sessionStorage.getItem("TOKEN");
                 const refreshToken = sessionStorage.getItem("REFRESHTOKEN");
-                return await Auth.refreshToken({ accessToken: accessToken, refreshToken: refreshToken })
+                return await apis.Auth.refreshToken({ accessToken: accessToken, refreshToken: refreshToken })
                     .then(async (res) => {
                         if (res?.status == "SUCCESS") {
                             sessionStorage.setItem("TOKEN", res.resultData);
