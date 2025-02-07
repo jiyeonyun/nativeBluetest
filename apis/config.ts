@@ -1,16 +1,18 @@
-import axios, { AxiosError, AxiosHeaders, AxiosResponse, HttpStatusCode } from "axios";
+import axios, { AxiosError, AxiosHeaders } from "axios";
 import { Result } from "@/types/responseType";
 import { HOST_URL } from "./url";
-import apis from "./index";
+import apis from "@/apis";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // AsyncStorage import
+
 type ErrorMessages = {
     [key: string]: string; // 모든 키는 string이고, 값도 string입니다.
 };
 
 const success = function (response: { data: any }) {
     // TODO CHECK :: BASE API 에 맞게 Response Data 및 Error 설정
-
     return response.data;
 };
+
 interface TokenRefreshResponse {
     access_token: string;
 }
@@ -25,36 +27,34 @@ const fail = async (error: AxiosError<Result<any>>) => {
     };
 
     if (error.response) {
-        const resultCode = error.response.data.resultCode;
-        switch (error.response.status) {
+        const resultCode = error.response?.data?.resultCode;
+        switch (error.response?.status) {
             case 400:
-                const errorMessage = resultCode
-                    ? error.response?.data.resultMessage
-                    : error.response?.data.resultMessage;
-                errorResult.resultMessage = errorMessage || "Unknown error";
+                const errorMessage = resultCode ? error.response?.data?.resultMessage : "Unknown error";
+                errorResult.resultMessage = errorMessage;
                 break;
             case 403:
-                const accessToken = sessionStorage.getItem("TOKEN");
-                const refreshToken = sessionStorage.getItem("REFRESHTOKEN");
-                return await apis.Auth.refreshToken({ accessToken: accessToken, refreshToken: refreshToken })
-                    .then(async (res) => {
-                        if (res?.status == "SUCCESS") {
-                            sessionStorage.setItem("TOKEN", res.resultData);
+                // 토큰 갱신 로직
+                const accessToken = await AsyncStorage.getItem("TOKEN");
+                const refreshToken = await AsyncStorage.getItem("REFRESHTOKEN");
+                if (accessToken && refreshToken && originalRequest) {
+                    try {
+                        const res = await apis.Auth.refreshToken({ accessToken, refreshToken });
+                        if (res?.status === "SUCCESS") {
+                            await AsyncStorage.setItem("TOKEN", res.resultData);
                             hostInstance.defaults.headers.common["X-AUTH-TOKEN"] = res.resultData;
-                            const requestHeader = originalRequest?.headers as AxiosHeaders;
-                            requestHeader.set("X-AUTH-TOKEN", accessToken);
+                            originalRequest.headers["X-AUTH-TOKEN"] = res.resultData;
+                            return axios(originalRequest); // 재요청
                         } else {
-                            // Token이 비정상 적일 경우 Login 화면으로
-                            sessionStorage.clear();
-                            // window.location.href = "/login?session=expire"
+                            await AsyncStorage.clear();
                             return Promise.resolve(errorResult);
                         }
-                    })
-                    .catch(() => {
-                        // Token 재발급 API 실패 시 Login 화면으로
-                        sessionStorage.clear();
-                        window.location.href = "/login?session=expire";
-                    });
+                    } catch (e) {
+                        await AsyncStorage.clear();
+                        return Promise.resolve(errorResult);
+                    }
+                }
+                break;
             case 404:
                 errorResult.resultMessage = "관리자에게 문의바랍니다.";
                 break;
@@ -68,8 +68,7 @@ const fail = async (error: AxiosError<Result<any>>) => {
                 break;
         }
     } else if (error.request) {
-        const errorMessage = error.message;
-        errorResult.resultMessage = errorMessage;
+        errorResult.resultMessage = error.message;
         return Promise.resolve(errorResult);
     }
 
@@ -90,12 +89,23 @@ const stationInstance = axios.create({
 hostInstance.interceptors.response.use(success, fail);
 stationInstance.interceptors.response.use(success, fail);
 
-hostInstance.interceptors.request.use((config) => {
-    config.headers = Object.assign({}, config.headers, { "X-AUTH-TOKEN": sessionStorage.getItem("TOKEN") });
+/**
+ * 요청 전 처리
+ * AsyncStorage에서 토큰을 읽어 헤더에 추가합니다.
+ */
+stationInstance.interceptors.request.use(async (config) => {
+    const token = await AsyncStorage.getItem("TOKEN");
+    if (token) {
+        config.headers = Object.assign({}, config.headers, { "X-AUTH-TOKEN": token });
+    }
     return config;
 });
-stationInstance.interceptors.request.use((config) => {
-    config.headers = Object.assign({}, config.headers, { "X-AUTH-TOKEN": sessionStorage.getItem("TOKEN") });
+
+hostInstance.interceptors.request.use(async (config) => {
+    const token = await AsyncStorage.getItem("TOKEN");
+    if (token) {
+        config.headers = Object.assign({}, config.headers, { "X-AUTH-TOKEN": token });
+    }
     return config;
 });
 
@@ -144,6 +154,7 @@ export function handleNetworkError(status: number) {
         }
     }
 }
+
 export default {
     station: stationInstance,
     host: hostInstance,
